@@ -1,9 +1,10 @@
-from ctypes import c_bool
 import numpy as np
 import re
 import matplotlib.pyplot as plt
 import os
 import glob
+import math
+import xarray as xr
 #import logging
 
 #__name__ = ["read_settings"]
@@ -43,8 +44,12 @@ def read_settings(data_dir):
         
         #angle size and value
         d2_size = [int(ListofData[10]) for ListofData[10] in re.findall(r'-?\d+\.?\d*', ListofData[10])][-1]
-        angle = [float(ListofData[11]) for ListofData[11] in re.findall(r'\d*[.]\d*', ListofData[11])]
-        
+        angle = [float(ListofData[11]) for ListofData[11] in re.findall(r'\S\d*[.]\d*', ListofData[11])]
+        photon_energy = [int(ListofData[15]) for ListofData[15] in re.findall(r'-?\d+\.?\d*', ListofData[15])][-1]
+        p_momentum = []
+        for ang in angle:
+            p_momentum_element =  0.5123*math.sqrt(photon_energy)*math.sin(math.radians(ang))
+            p_momentum.append(p_momentum_element)
         #comment info, theta, phi, and temp
         comments = [float(ListofData[38]) for ListofData[38] in re.findall(r'-?\d+\.?\d*', ListofData[38])]
         theta = comments[0]
@@ -53,7 +58,7 @@ def read_settings(data_dir):
         
         #generate dictionary
         Data_Info = {"d1_size": d1_size, "kinetic energy": kinetic_energy, "d2_size": d2_size, "angle": angle, 
-        "theta": theta, "phi": phi, "temp": temp}
+        "p_momentum": p_momentum, "theta": theta, "phi": phi, "temp": temp}
     return Data_Info
 
 def batch_read_experiment(data_dir):
@@ -95,12 +100,26 @@ def batch_read_experiment(data_dir):
                         del i_new[0]
                         value_list.append(i_new)
                         value_list_mx = np.array(value_list)
-                        Result[file_name] = value_list_mx
+                print(value_list_mx.shape)
+                da = embed_info_2_xarray(value_list_mx)
+                Result[file_name] = da
     return Result
 
+def embed_info_2_xarray(nparray):
+    p_momentum = read_settings(path_input)["p_momentum"] #list
+    kinetic_energy = read_settings(path_input)["kinetic energy"] #list
+    print(len(p_momentum))
+    print(len(kinetic_energy))
+    da = xr.DataArray(
+        data = nparray, 
+        dims = ["y", "x"], 
+        coords = dict(p_momentum = (["x"], p_momentum), 
+        kinetic_energy = (["y"], kinetic_energy))
+    )
+    return da
 
 
-
+print(batch_read_experiment(path_input))
 
 
 
