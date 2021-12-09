@@ -5,15 +5,27 @@ import os
 import glob
 import math
 import xarray as xr
-#import logging
+import logging
 
+__all__ = ["read_settings", "batch_read_TD_experiment"]
 #__name__ = ["read_settings"]
-#logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 #purpose: read the file and generate the figure (from NSRRC U9 ARPES beamline) 
 
 #data pathway
-path_input = "D:\github\PyMxPro\_test"
+path_input = "D:\github\PyMxPro\_test_TD"
+
+#distinguish the dataset is time-resolved, temperature dependent, or XXXX
+def classification(data_dir):
+    data_dir_split = data_dir.split("_")
+    if "TD" in data_dir_split:
+        return batch_read_TD_experiment(data_dir) 
+    elif "TR" in data_dir_split:
+        print("hihi")
+    else:
+        print("unknown dataset")
+
 
 #generate the list with each line of the txt file and get the information we need
 def read_settings(data_dir):
@@ -55,13 +67,13 @@ def read_settings(data_dir):
         theta = comments[0]
         phi = comments[1]
         temp = comments[-1]
-        
+    if __name__ == '__main__':
         #generate dictionary
         Data_Info = {"d1_size": d1_size, "kinetic energy": kinetic_energy, "d2_size": d2_size, "angle": angle, 
-        "p_momentum": p_momentum, "theta": theta, "phi": phi, "temp": temp}
+        "p_momentum": p_momentum, "theta": theta, "phi": phi, "temperature": temp}
     return Data_Info
 
-def batch_read_experiment(data_dir):
+def batch_read_TD_experiment(data_dir):
     """
     Batch Read the .txt files in the data_dir and capture the [data1]
     Returns: Result dictrionary
@@ -72,17 +84,12 @@ def batch_read_experiment(data_dir):
     
     #create dictionary
     Result = {}
-
     for file in file_list:
         #generate file_name in the data_dir
         file_name = file.split("\\")[-1]
         
-        #for _Settings file
-        if file_name == "_Settings.txt":
-            Result[file_name] = "settings"
-        
         #for other files, generate ListofData and value_list
-        else:
+        if file_name != "_Settings.txt":
             ListofData = []
             value_list = []
             with open(file, "r") as f:
@@ -100,6 +107,7 @@ def batch_read_experiment(data_dir):
                         del i_new[0]
                         value_list.append(i_new)
                         value_list_mx = np.array(value_list)
+            #if __name__ == '__main__':                   
                 print(value_list_mx.shape)
                 da = embed_info_2_xarray(value_list_mx)
                 Result[file_name] = da
@@ -108,18 +116,30 @@ def batch_read_experiment(data_dir):
 def embed_info_2_xarray(nparray):
     p_momentum = read_settings(path_input)["p_momentum"] #list
     kinetic_energy = read_settings(path_input)["kinetic energy"] #list
+    temperature = read_settings(path_input)["temperature"]
+
+    print(temperature)
+    print(type(temperature))
     print(len(p_momentum))
     print(len(kinetic_energy))
     da = xr.DataArray(
         data = nparray, 
-        dims = ["y", "x"], 
-        coords = dict(p_momentum = (["x"], p_momentum), 
-        kinetic_energy = (["y"], kinetic_energy))
+        dims = ["kinetic_energy", "p_momentum"], 
+        coords = dict(p_momentum = (["p_momentum"], p_momentum), 
+        kinetic_energy = (["kinetic_energy"], kinetic_energy),
+        temperature = temperature
+        )
     )
     return da
 
 
-print(batch_read_experiment(path_input))
+print(classification(path_input))
 
+
+
+#print(batch_read_experiment(path_input))
+
+#a = batch_read_experiment(path_input)["20180815_0001.txt"]
+#print(a.dims[0])
 
 
