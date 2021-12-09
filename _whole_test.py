@@ -70,10 +70,13 @@ def hessian(x):
     return hessian
 
 
-#second_dev = hessian(real_value_list_mx)[0, 0, :, :, ]
+second_dev = hessian(real_value_list_mx)[0, 0, :, :, ]
 #print(second_dev)
-
+plt.subplot(1, 2, 1)
 plt.imshow(real_value_list_mx, plt.cm.gray)
+plt.colorbar()
+plt.subplot(1, 2, 2)
+plt.imshow(second_dev, plt.cm.gray)
 plt.colorbar()
 plt.show()
 
