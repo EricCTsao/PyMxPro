@@ -7,7 +7,7 @@ import math
 import xarray as xr
 import logging
 
-__all__ = ["read_settings", "batch_read_TD_experiment"]
+__all__ = ["classification", "read_settings", "batch_read_TD_experiment"]
 #__name__ = ["read_settings"]
 logger = logging.getLogger(__name__)
 
@@ -119,44 +119,40 @@ def batch_read_TD_experiment(data_dir):
                 dims = ["kinetic_energy", "p_momentum"], 
                 coords = dict(p_momentum = (["p_momentum"], p_momentum), 
                 kinetic_energy = (["kinetic_energy"], kinetic_energy),
-                temp = temp
+                temperature = temp
                 )
             )
-                
-                #Result.append(value_list)
-                #value_list_mx = np.array(Result)            
-    
-                #print(value_list_mx.shape)
-                #da = embed_info_2_xarray(value_list_mx)
-                #Result.append = da
+
             Result[file_name] = da
     return Result
-
-def embed_info_2_xarray(nparray):
-    p_momentum = read_settings(path_input)["p_momentum"] #list
-    kinetic_energy = read_settings(path_input)["kinetic energy"] #list
-    #temperature = read_TD_variables_T(path_input)["temperature"]
-
-    print(len(p_momentum))
-    print(len(kinetic_energy))
-    da = xr.DataArray(
-        data = nparray, 
-        dims = ["kinetic_energy", "p_momentum"], 
-        coords = dict(p_momentum = (["p_momentum"], p_momentum), 
-        kinetic_energy = (["kinetic_energy"], kinetic_energy)
-        )
-    )
-    return da
-
-
-print(classification(path_input))
-
-
-
+#------------------------------------------------------------
 
 #print(batch_read_experiment(path_input))
 
 #a = batch_read_experiment(path_input)["20180815_0001.txt"]
 #print(a.dims[0])
+
+#--------------------------------------------------------------
+def batch_preview(data_dir):
+    dataset_dict = classification(data_dir)
+    fig, axes = plt.subplots(ncols=len(dataset_dict))
+
+    for index, key in enumerate(dataset_dict):
+        each_data = dataset_dict[key]
+        each_data_plot = each_data.plot(ax = axes[index])
+
+        #plt.subplot(1, len(dataset_dict), int(index)+1)
+        #plt.imshow(each_data, plt.cm.gray)
+    plt.tight_layout()
+    plt.show()
+
+batch_preview(path_input)
+
+#a =classification(path_input)["20180815_0001.txt"]
+#a.plot()
+#plt.show()
+
+#print(batch_preview(path_input))
+
 
 
