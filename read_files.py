@@ -73,12 +73,16 @@ def read_settings(data_dir):
         "p_momentum": p_momentum, "theta": theta, "phi": phi, "temperature": temp}
     return Data_Info
 
+
 def batch_read_TD_experiment(data_dir):
     """
     Batch Read the .txt files in the data_dir and capture the [data1]
     Returns: Result dictrionary
             each file with each 2D matrix
     """
+    settings_dict = read_settings(data_dir)
+    p_momentum = settings_dict["p_momentum"]
+    kinetic_energy =settings_dict["kinetic energy"]
     #search and read experimental *.txt
     file_list = glob.glob(os.path.join(data_dir, "*.txt"))
     
@@ -97,7 +101,10 @@ def batch_read_TD_experiment(data_dir):
                 for line in f:
                     Line_split = line.split('\n')[0]
                     ListofData.append(Line_split)
-                
+                    
+                comments = [float(ListofData[38]) for ListofData[38] in re.findall(r'-?\d+\.?\d*', ListofData[38])]
+                temp = comments[-1]
+                print(temp)
                 #extract [data1] information and generate a matrix for each file
                 #generate dictionary for each file and [data1]
                 for i in ListofData[47:]:
@@ -107,33 +114,43 @@ def batch_read_TD_experiment(data_dir):
                         del i_new[0]
                         value_list.append(i_new)
                         value_list_mx = np.array(value_list)
-            #if __name__ == '__main__':                   
-                print(value_list_mx.shape)
-                da = embed_info_2_xarray(value_list_mx)
-                Result[file_name] = da
+            da = xr.DataArray(
+                data = value_list_mx, 
+                dims = ["kinetic_energy", "p_momentum"], 
+                coords = dict(p_momentum = (["p_momentum"], p_momentum), 
+                kinetic_energy = (["kinetic_energy"], kinetic_energy),
+                temp = temp
+                )
+            )
+                
+                #Result.append(value_list)
+                #value_list_mx = np.array(Result)            
+    
+                #print(value_list_mx.shape)
+                #da = embed_info_2_xarray(value_list_mx)
+                #Result.append = da
+            Result[file_name] = da
     return Result
 
 def embed_info_2_xarray(nparray):
     p_momentum = read_settings(path_input)["p_momentum"] #list
     kinetic_energy = read_settings(path_input)["kinetic energy"] #list
-    temperature = read_settings(path_input)["temperature"]
+    #temperature = read_TD_variables_T(path_input)["temperature"]
 
-    print(temperature)
-    print(type(temperature))
     print(len(p_momentum))
     print(len(kinetic_energy))
     da = xr.DataArray(
         data = nparray, 
         dims = ["kinetic_energy", "p_momentum"], 
         coords = dict(p_momentum = (["p_momentum"], p_momentum), 
-        kinetic_energy = (["kinetic_energy"], kinetic_energy),
-        temperature = temperature
+        kinetic_energy = (["kinetic_energy"], kinetic_energy)
         )
     )
     return da
 
 
 print(classification(path_input))
+
 
 
 
